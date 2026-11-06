@@ -85,11 +85,6 @@
     border-radius:50%;
     object-fit:cover;
     box-shadow:0 0 0 5px var(--gold), 0 10px 30px rgba(0,0,0,.45);
-    animation:float 3.4s ease-in-out infinite;
-  }
-  @keyframes float{
-    0%,100%{transform:translateY(0) rotate(0deg);}
-    50%{transform:translateY(-8px) rotate(-2deg);}
   }
 
   h1{
@@ -132,9 +127,8 @@
     padding:17px 20px;
     border-radius:16px;
     box-shadow:0 8px 20px rgba(0,0,0,.35);
-    transition:transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    transition:box-shadow .15s ease, filter .15s ease;
   }
-  .btn:active{transform:scale(.97);}
   .btn.primary{
     background:linear-gradient(135deg, var(--red), var(--red-dark));
     color:#fff;
@@ -196,6 +190,9 @@
     text-align:center;
     line-height:1.6;
   }
+
+  /* Estado inicial (GSAP anima desde aquí); si JS falla, el fallback de abajo lo revierte */
+  .garland, .logo, h1, .tag, .sub, .btn, .card{opacity:0;}
 </style>
 </head>
 <body>
@@ -259,27 +256,76 @@
   Joyeuses fêtes de la part de toute l'équipe !
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
 (function(){
+  var ALL_ANIMATED = '.garland,.logo,h1,.tag,.sub,.btn,.card';
+
+  // Red de seguridad: si GSAP no carga (CDN caído, red lenta), se ve todo igual.
+  if (typeof gsap === 'undefined'){
+    document.querySelectorAll(ALL_ANIMATED).forEach(function(el){ el.style.opacity = 1; });
+    return;
+  }
+
+  // ---- Nieve ----
   var box = document.getElementById('snow');
-  var flakes = ['❄', '❅', '❆'];
-  var n = window.innerWidth < 480 ? 26 : 40;
+  var flakeChars = ['❄', '❅', '❆'];
+  var n = window.innerWidth < 480 ? 24 : 38;
   for (var i = 0; i < n; i++){
     var el = document.createElement('span');
     el.className = 'flake';
-    el.textContent = flakes[Math.floor(Math.random() * flakes.length)];
+    el.textContent = flakeChars[Math.floor(Math.random() * flakeChars.length)];
     var size = 10 + Math.random() * 16;
-    var left = Math.random() * 100;
-    var duration = 7 + Math.random() * 10;
-    var delay = Math.random() * 10;
-    var drift = (Math.random() * 60 - 30) + 'px';
-    el.style.left = left + 'vw';
+    el.style.left = (Math.random() * 100) + 'vw';
     el.style.fontSize = size + 'px';
-    el.style.setProperty('--drift', drift);
-    el.style.animationDuration = duration + 's';
-    el.style.animationDelay = '-' + delay + 's';
+    el.style.opacity = 0.5 + Math.random() * 0.4;
     box.appendChild(el);
+
+    var fallDuration = 9 + Math.random() * 9;
+    gsap.fromTo(el,
+      { y: -20, rotation: 0 },
+      {
+        y: window.innerHeight + 20,
+        rotation: Math.random() < 0.5 ? 360 : -360,
+        duration: fallDuration,
+        delay: -Math.random() * fallDuration,
+        ease: 'none',
+        repeat: -1
+      }
+    );
+    // vaivén lateral independiente de la caída
+    gsap.to(el, {
+      x: (Math.random() * 50 - 25),
+      duration: 2 + Math.random() * 2,
+      delay: -Math.random() * 4,
+      ease: 'sine.inOut',
+      yoyo: true,
+      repeat: -1
+    });
   }
+
+  // ---- Entrada escalonada ----
+  var tl = gsap.timeline({ defaults: { ease: 'power2.out' } });
+  tl.to('.garland', { opacity: 1, y: 0, duration: .5 }, 0)
+    .fromTo('.garland', { y: -14 }, { y: 0, duration: .5 }, 0)
+    .fromTo('.logo', { opacity: 0, scale: .5, rotation: -8 },
+                      { opacity: 1, scale: 1, rotation: 0, duration: .8, ease: 'back.out(1.7)' }, .15)
+    .fromTo('h1', { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: .5 }, .45)
+    .fromTo('.tag', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .45 }, .55)
+    .fromTo('.sub', { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: .45 }, .62)
+    .fromTo('.btn', { opacity: 0, y: 18 }, { opacity: 1, y: 0, duration: .5, stagger: .12 }, .72)
+    .fromTo('.card', { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: .55, stagger: .12 }, .95);
+
+  // Flotado continuo del logo tras su entrada
+  gsap.to('.logo', { y: -9, rotation: -3, duration: 1.8, ease: 'sine.inOut', yoyo: true, repeat: -1, delay: .9 });
+
+  // ---- Interacción en botones ----
+  document.querySelectorAll('.btn').forEach(function(btn){
+    btn.addEventListener('mouseenter', function(){ gsap.to(btn, { scale: 1.03, duration: .2, ease: 'power1.out' }); });
+    btn.addEventListener('mouseleave', function(){ gsap.to(btn, { scale: 1, duration: .25, ease: 'power1.out' }); });
+    btn.addEventListener('pointerdown', function(){ gsap.to(btn, { scale: .95, duration: .12 }); });
+    btn.addEventListener('pointerup', function(){ gsap.to(btn, { scale: 1, duration: .25, ease: 'back.out(2)' }); });
+  });
 })();
 </script>
 
