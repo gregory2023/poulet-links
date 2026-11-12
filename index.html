@@ -269,6 +269,13 @@
   .wz-done{text-align:center;padding:10px 0 4px;}
   .wz-done .big{font-size:44px;}
   .wz-done p{font-size:15.5px;line-height:1.5;font-weight:600;margin:8px 0 0;}
+  .wz-again{
+    width:100%;margin-top:18px;min-height:54px;
+    font-family:inherit;font-weight:800;font-size:16px;
+    border:2px solid var(--red);border-radius:14px;
+    background:#fff;color:var(--red-dark);cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
 
   /* ---- Tarifs ---- */
@@ -413,6 +420,7 @@
           <div class="big">🐔✅</div>
           <p class="q">Merci, c'est noté !</p>
           <p>Ta réservation sera confirmée dans les prochaines heures sur WhatsApp.</p>
+          <button type="button" class="wz-again" id="wzAgain">➕ Faire une autre demande</button>
         </div>
       </div>
 
@@ -623,6 +631,15 @@
   }
   choices('f-passengers', 'passengers');
   choices('f-luggage', 'luggage');
+
+  // Nouvelle demande : on garde le nom et le numéro, on repart de l'adresse de départ.
+  $('wzAgain').addEventListener('click', function(){
+    ['f-origin', 'f-destination', 'f-outbound-date', 'f-outbound-time', 'f-return-date', 'f-return-time'].forEach(function(id){ $(id).value = ''; });
+    data.passengers = null; data.luggage = null;
+    Array.prototype.forEach.call(form.querySelectorAll('.wz-choices button'), function(b){ b.classList.remove('sel'); });
+    sending = false; nextBtn.disabled = false; nav.style.display = '';
+    show(2);
+  });
 
   form.addEventListener('submit', function(e){ e.preventDefault(); next(); });
   backBtn.addEventListener('click', function(){ if (current > 0 && !sending) show(current - 1); });
