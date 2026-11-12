@@ -175,6 +175,102 @@
   .btn .label{flex:1;}
   .btn .arrow{opacity:.6;font-size:14px;}
 
+  .btn .label small{display:block;font-weight:600;font-size:12.5px;opacity:.9;margin-top:2px;}
+
+  /* ---- Réservation en ligne (aller-retour) ---- */
+  .btn.online{
+    position:relative;
+    width:100%;
+    border:2px solid var(--gold);
+    background:linear-gradient(135deg,#1d4a86 0%,var(--navy) 100%);
+    color:#fff;
+    font-family:inherit;
+    text-align:left;
+    cursor:pointer;
+    padding:22px 20px 18px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .badge-new{
+    position:absolute;
+    top:-12px;left:16px;
+    background:var(--red);
+    color:#fff;
+    font-family:'Archivo Black',sans-serif;
+    font-size:12px;
+    letter-spacing:.06em;
+    padding:4px 11px;
+    border-radius:999px;
+    box-shadow:0 3px 8px rgba(0,0,0,.4);
+  }
+  .wizard{
+    display:none;
+    width:100%;
+    background:var(--cream);
+    color:var(--dark);
+    border-radius:18px;
+    padding:18px 18px 20px;
+    box-shadow:0 8px 20px rgba(0,0,0,.35);
+  }
+  .wizard.open{display:block;}
+  .wz-progress{height:6px;border-radius:999px;background:#ddd6c4;overflow:hidden;margin-bottom:6px;}
+  .wz-progress span{display:block;height:100%;width:0;background:var(--red);border-radius:999px;transition:width .25s ease;}
+  .wz-count{font-size:12px;font-weight:700;color:#7a7466;margin:0 0 14px;}
+  .wz-step{display:none;}
+  .wz-step.active{display:block;}
+  .wz-step label, .wz-step .q{display:block;font-family:'Archivo Black',sans-serif;font-size:19px;line-height:1.25;margin:0 0 6px;}
+  .wz-step .hint{font-size:13px;color:#6b6558;margin:0 0 12px;}
+  .wizard input[type=text], .wizard input[type=tel], .wizard input[type=date], .wizard input[type=time]{
+    width:100%;
+    font-family:inherit;
+    font-size:17px; /* >=16px : pas de zoom automatique sur iOS */
+    font-weight:600;
+    padding:15px 14px;
+    min-height:54px;
+    border:2px solid #cfc8b6;
+    border-radius:14px;
+    background:#fff;
+    color:var(--dark);
+    outline:none;
+    -webkit-appearance:none;
+    appearance:none;
+  }
+  .wizard input:focus{border-color:var(--red);}
+  .wz-two{display:flex;gap:10px;}
+  .wz-two > div{flex:1;min-width:0;}
+  .wz-two span{display:block;font-size:12px;font-weight:700;color:#6b6558;margin-bottom:4px;}
+  .wz-choices{display:flex;gap:10px;}
+  .wz-choices button{
+    flex:1;
+    font-family:'Archivo Black',sans-serif;
+    font-size:19px;
+    min-height:60px;
+    border:2px solid #cfc8b6;
+    border-radius:14px;
+    background:#fff;
+    color:var(--dark);
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wz-choices button.sel{border-color:var(--red);background:var(--red);color:#fff;}
+  .wz-error{min-height:20px;font-size:13.5px;font-weight:700;color:var(--red-dark);margin:10px 0 0;}
+  .wz-nav{display:flex;gap:10px;margin-top:8px;}
+  .wz-nav button{
+    font-family:inherit;font-weight:800;font-size:16px;
+    min-height:54px;border-radius:14px;border:none;cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .wz-back{flex:0 0 auto;padding:0 18px;background:#e3dccb;color:var(--dark);}
+  .wz-next{flex:1;background:var(--red);color:#fff;}
+  .wz-next:disabled{opacity:.6;}
+  .wz-recap{font-size:14.5px;line-height:1.5;margin:0 0 4px;}
+  .wz-recap div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #ddd6c4;}
+  .wz-recap div span:first-child{color:#6b6558;flex:0 0 auto;}
+  .wz-recap div span:last-child{font-weight:700;text-align:right;overflow-wrap:anywhere;}
+  .wz-done{text-align:center;padding:10px 0 4px;}
+  .wz-done .big{font-size:44px;}
+  .wz-done p{font-size:15.5px;line-height:1.5;font-weight:600;margin:8px 0 0;}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
   /* ---- Tarifs ---- */
   .card{
     width:100%;
@@ -243,10 +339,99 @@
   <p class="sub">Transport à Villanueva de la Cañada · Joyeuses fêtes 🎁</p>
 
   <div class="cta">
+    <button type="button" class="btn online" id="wzOpen" aria-expanded="false" aria-controls="wizard">
+      <span class="badge-new">NOUVEAU !</span>
+      <span class="icon">📝</span>
+      <span class="label">Réserver en ligne · aller-retour<small>⏱ Moins de 2 minutes</small></span>
+      <span class="arrow" id="wzArrow">▾</span>
+    </button>
+
+    <form class="wizard" id="wizard" novalidate autocomplete="on">
+      <div class="wz-progress"><span id="wzBar"></span></div>
+      <p class="wz-count" id="wzCount"></p>
+
+      <div class="wz-step" data-field="name">
+        <label for="f-name">Comment tu t'appelles ?</label>
+        <p class="hint">Prénom et nom.</p>
+        <input type="text" id="f-name" maxlength="60" autocomplete="name" autocapitalize="words" enterkeyhint="next">
+      </div>
+      <div class="wz-step" data-field="phone">
+        <label for="f-phone">Ton numéro WhatsApp ?</label>
+        <p class="hint">Avec l'indicatif, ex. +33 6 12 34 56 78. On te confirme dessus.</p>
+        <input type="tel" id="f-phone" maxlength="20" autocomplete="tel" inputmode="tel" enterkeyhint="next">
+      </div>
+      <div class="wz-step" data-field="origin">
+        <label for="f-origin">D'où pars-tu ?</label>
+        <p class="hint">Adresse complète. Ex. Ronda de Aulencia 49, Villanueva de la Cañada.</p>
+        <input type="text" id="f-origin" maxlength="150" autocomplete="street-address" enterkeyhint="next">
+      </div>
+      <div class="wz-step" data-field="destination">
+        <label for="f-destination">Où vas-tu ?</label>
+        <p class="hint">Ex. Aéroport Barajas T4, Gare d'Atocha, une adresse à Madrid…</p>
+        <input type="text" id="f-destination" maxlength="150" autocomplete="off" enterkeyhint="next">
+      </div>
+      <div class="wz-step" data-field="outbound">
+        <p class="q">Quand est l'aller ?</p>
+        <p class="hint">Jour et heure de départ.</p>
+        <div class="wz-two">
+          <div><span>Jour</span><input type="date" id="f-outbound-date" aria-label="Jour de l'aller"></div>
+          <div><span>Heure</span><input type="time" id="f-outbound-time" aria-label="Heure de l'aller"></div>
+        </div>
+      </div>
+      <div class="wz-step" data-field="return">
+        <p class="q">Et le retour ?</p>
+        <p class="hint">Jour et heure où on vient te chercher.</p>
+        <div class="wz-two">
+          <div><span>Jour</span><input type="date" id="f-return-date" aria-label="Jour du retour"></div>
+          <div><span>Heure</span><input type="time" id="f-return-time" aria-label="Heure du retour"></div>
+        </div>
+      </div>
+      <div class="wz-step" data-field="passengers">
+        <p class="q">Combien de personnes ?</p>
+        <p class="hint">4 maximum par voiture.</p>
+        <div class="wz-choices" id="f-passengers">
+          <button type="button" data-v="1">1</button>
+          <button type="button" data-v="2">2</button>
+          <button type="button" data-v="3">3</button>
+          <button type="button" data-v="4">4</button>
+        </div>
+      </div>
+      <div class="wz-step" data-field="luggage">
+        <p class="q">Un bagage supplémentaire ?</p>
+        <p class="hint">En plus d'une valise par personne.</p>
+        <div class="wz-choices" id="f-luggage">
+          <button type="button" data-v="yes">Oui</button>
+          <button type="button" data-v="no">Non</button>
+        </div>
+      </div>
+      <div class="wz-step" data-field="recap">
+        <p class="q">Tout est bon ?</p>
+        <div class="wz-recap" id="wzRecap"></div>
+      </div>
+      <div class="wz-step" data-field="done">
+        <div class="wz-done">
+          <div class="big">🐔✅</div>
+          <p class="q">Merci, c'est noté !</p>
+          <p>Ta réservation sera confirmée dans les prochaines heures sur WhatsApp.</p>
+        </div>
+      </div>
+
+      <div class="hp" aria-hidden="true">
+        <label for="f-website">Ne pas remplir</label>
+        <input type="text" id="f-website" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
+      <p class="wz-error" id="wzError" role="alert"></p>
+      <div class="wz-nav" id="wzNav">
+        <button type="button" class="wz-back" id="wzBack">←</button>
+        <button type="submit" class="wz-next" id="wzNext">Continuer</button>
+      </div>
+    </form>
+
     <a class="btn primary" href="https://wa.me/34643637870?text=Bonjour%20Poulet%20%F0%9F%8E%84%2C%20je%20voudrais%20r%C3%A9server%20un%20trajet" target="_blank" rel="noopener" aria-label="Réserver sur WhatsApp">
       <span class="row">
         <span class="icon">💬</span>
-        <span class="label">Réserver sur WhatsApp</span>
+        <span class="label">Réserver sur WhatsApp<small>⏱ Moins de 6 minutes</small></span>
         <span class="arrow">↗</span>
       </span>
     </a>
@@ -291,10 +476,168 @@
   Joyeuses fêtes de la part de toute l'équipe !
 </footer>
 
+<script>
+(function(){
+  var API_URL = 'https://poulet-production.up.railway.app/api/web-booking';
+
+  var form = document.getElementById('wizard');
+  var openBtn = document.getElementById('wzOpen');
+  var steps = Array.prototype.slice.call(form.querySelectorAll('.wz-step'));
+  var bar = document.getElementById('wzBar');
+  var count = document.getElementById('wzCount');
+  var errorBox = document.getElementById('wzError');
+  var nav = document.getElementById('wzNav');
+  var backBtn = document.getElementById('wzBack');
+  var nextBtn = document.getElementById('wzNext');
+  var recap = document.getElementById('wzRecap');
+  var QUESTIONS = 8;            // étapes avant le récapitulatif
+  var current = 0;
+  var sending = false;
+  var data = { passengers: null, luggage: null };
+
+  function $(id){ return document.getElementById(id); }
+  function val(id){ return $(id).value.replace(/\s+/g, ' ').trim(); }
+  function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function isoDay(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  var today = new Date();
+  var maxDay = new Date(); maxDay.setDate(maxDay.getDate() + 180);
+  ['f-outbound-date', 'f-return-date'].forEach(function(id){ $(id).min = isoDay(today); $(id).max = isoDay(maxDay); });
+
+  var BAD_CHARS = /[<>{}\\]/;
+  var VALIDATORS = {
+    name: function(){
+      var v = val('f-name');
+      if (v.length < 2 || BAD_CHARS.test(v) || /[0-9]/.test(v)) return 'Écris ton prénom et ton nom.';
+    },
+    phone: function(){
+      var v = val('f-phone');
+      var digits = v.replace(/\D/g, '');
+      if (!/^\+?[0-9][0-9 ]{6,18}$/.test(v) || digits.length < 8 || digits.length > 15) return 'Numéro invalide. Exemple : +33 6 12 34 56 78';
+    },
+    origin: function(){
+      var v = val('f-origin');
+      if (v.length < 5 || BAD_CHARS.test(v)) return 'Écris l\'adresse de départ complète.';
+    },
+    destination: function(){
+      var v = val('f-destination');
+      if (v.length < 5 || BAD_CHARS.test(v)) return 'Écris ta destination.';
+    },
+    outbound: function(){
+      var d = $('f-outbound-date').value, t = $('f-outbound-time').value;
+      if (!d || !t) return 'Choisis le jour et l\'heure de l\'aller.';
+      if (d < isoDay(today)) return 'Cette date est déjà passée.';
+      if (d > isoDay(maxDay)) return 'Cette date est trop lointaine.';
+    },
+    'return': function(){
+      var d = $('f-return-date').value, t = $('f-return-time').value;
+      if (!d || !t) return 'Choisis le jour et l\'heure du retour.';
+      if (d + 'T' + t <= $('f-outbound-date').value + 'T' + $('f-outbound-time').value) return 'Le retour doit être après l\'aller.';
+    },
+    passengers: function(){ if (!data.passengers) return 'Choisis le nombre de personnes.'; },
+    luggage: function(){ if (!data.luggage) return 'Choisis Oui ou Non.'; }
+  };
+
+  function frDate(d, t){ var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0] + ' à ' + t; }
+
+  function buildRecap(){
+    var rows = [
+      ['Nom', val('f-name')],
+      ['WhatsApp', val('f-phone')],
+      ['Départ', val('f-origin')],
+      ['Destination', val('f-destination')],
+      ['Aller', frDate($('f-outbound-date').value, $('f-outbound-time').value)],
+      ['Retour', frDate($('f-return-date').value, $('f-return-time').value)],
+      ['Personnes', String(data.passengers)],
+      ['Bagage en plus', data.luggage === 'yes' ? 'Oui' : 'Non']
+    ];
+    recap.textContent = '';
+    rows.forEach(function(r){
+      var row = document.createElement('div');
+      var k = document.createElement('span'); k.textContent = r[0];
+      var v = document.createElement('span'); v.textContent = r[1];   // textContent : jamais interprété comme HTML
+      v.setAttribute('translate', 'no');                              // le traducteur du navigateur ne doit pas réécrire ce que la personne a saisi
+      row.appendChild(k); row.appendChild(v); recap.appendChild(row);
+    });
+  }
+
+  function show(i){
+    current = i;
+    var field = steps[i].getAttribute('data-field');
+    steps.forEach(function(s, idx){ s.classList.toggle('active', idx === i); });
+    errorBox.textContent = '';
+    if (field === 'done'){
+      nav.style.display = 'none'; count.textContent = ''; bar.style.width = '100%';
+      return;
+    }
+    if (field === 'recap') buildRecap();
+    bar.style.width = Math.round((Math.min(i, QUESTIONS) / QUESTIONS) * 100) + '%';
+    count.textContent = field === 'recap' ? 'Dernière étape' : 'Question ' + (i + 1) + ' sur ' + QUESTIONS;
+    backBtn.style.visibility = i === 0 ? 'hidden' : 'visible';
+    nextBtn.textContent = field === 'recap' ? 'Envoyer ma demande' : 'Continuer';
+    var input = steps[i].querySelector('input');
+    if (input) setTimeout(function(){ input.focus({ preventScroll: true }); }, 60);
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function next(){
+    var field = steps[current].getAttribute('data-field');
+    if (field === 'recap') return send();
+    var problem = VALIDATORS[field] && VALIDATORS[field]();
+    if (problem){ errorBox.textContent = problem; return; }
+    show(current + 1);
+  }
+
+  function send(){
+    if (sending) return;
+    sending = true; nextBtn.disabled = true; nextBtn.textContent = 'Envoi…'; errorBox.textContent = '';
+    var payload = {
+      name: val('f-name'), phone: val('f-phone'),
+      origin: val('f-origin'), destination: val('f-destination'),
+      outbound_date: $('f-outbound-date').value, outbound_time: $('f-outbound-time').value,
+      return_date: $('f-return-date').value, return_time: $('f-return-time').value,
+      passengers: data.passengers, extra_luggage: data.luggage === 'yes',
+      website: $('f-website').value
+    };
+    fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'omit' })
+      .then(function(res){
+        if (res.ok) { show(steps.length - 1); return; }
+        if (res.status === 429) fail('Trop de demandes pour le moment. Réessaie plus tard ou réserve sur WhatsApp.');
+        else if (res.status === 400) fail('Certaines informations ne sont pas valides. Vérifie-les avec la flèche ←.');
+        else fail('Une erreur est survenue. Réessaie ou réserve sur WhatsApp.');
+      })
+      .catch(function(){ fail('Pas de connexion. Vérifie ton réseau et réessaie.'); });
+  }
+  function fail(msg){ sending = false; nextBtn.disabled = false; nextBtn.textContent = 'Envoyer ma demande'; errorBox.textContent = msg; }
+
+  function choices(id, key){
+    var box = $(id);
+    box.addEventListener('click', function(e){
+      var b = e.target.closest('button'); if (!b) return;
+      Array.prototype.forEach.call(box.children, function(c){ c.classList.toggle('sel', c === b); });
+      data[key] = key === 'passengers' ? parseInt(b.getAttribute('data-v'), 10) : b.getAttribute('data-v');
+      errorBox.textContent = '';
+      setTimeout(next, 180);
+    });
+  }
+  choices('f-passengers', 'passengers');
+  choices('f-luggage', 'luggage');
+
+  form.addEventListener('submit', function(e){ e.preventDefault(); next(); });
+  backBtn.addEventListener('click', function(){ if (current > 0 && !sending) show(current - 1); });
+  openBtn.addEventListener('click', function(){
+    var open = form.classList.toggle('open');
+    openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    $('wzArrow').textContent = open ? '▴' : '▾';
+    if (open) show(current);
+  });
+})();
+</script>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
 (function(){
-  var ALL_ANIMATED = '.garland,.logo,h1,.tag,.sub,.btn,.card';
+  var ALL_ANIMATED = '.garland,.logo,h1,.desc,.tag,.sub,.btn,.card';
 
   // Red de seguridad: si GSAP no carga (CDN caído, red lenta), se ve todo igual.
   if (typeof gsap === 'undefined'){
