@@ -214,6 +214,7 @@
     box-shadow:0 8px 20px rgba(0,0,0,.35);
   }
   .wizard.open{display:block;}
+  .wz-notice{margin:0 0 14px;padding:10px 12px;border:2px solid var(--red);border-radius:12px;background:#fdeaea;color:var(--red-dark);font-size:13.5px;line-height:1.45;font-weight:700;text-align:center;}
   .wz-progress{height:6px;border-radius:999px;background:#ddd6c4;overflow:hidden;margin-bottom:6px;}
   .wz-progress span{display:block;height:100%;width:0;background:var(--red);border-radius:999px;transition:width .25s ease;}
   .wz-count{font-size:12px;font-weight:700;color:#7a7466;margin:0 0 14px;}
@@ -351,11 +352,12 @@
     <button type="button" class="btn online" id="wzOpen" aria-expanded="false" aria-controls="wizard">
       <span class="badge-new">NOUVEAU !</span>
       <span class="icon">📝</span>
-      <span class="label">Réserver en ligne · aller-retour<small>⏱ Moins de 2 minutes</small><small class="until">Disponible jusqu'au 24 décembre</small></span>
+      <span class="label">Réserver en ligne · aller-retour<small>⏱ Moins de 2 minutes</small><small class="until">Disponible seulement jusqu'au 24 décembre</small></span>
       <span class="arrow" id="wzArrow">▾</span>
     </button>
 
     <form class="wizard" id="wizard" novalidate autocomplete="on">
+      <p class="wz-notice">⚠️ Uniquement pour les réservations <strong>aller-retour</strong>.<br>Ce module est disponible seulement jusqu'au <strong>24 décembre</strong>.</p>
       <div class="wz-progress"><span id="wzBar"></span></div>
       <p class="wz-count" id="wzCount"></p>
 
