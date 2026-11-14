@@ -377,7 +377,7 @@
       <span class="shine" aria-hidden="true"></span>
       <span class="badge-new">🎁 SPÉCIAL FÊTES</span>
       <span class="icon">🎄</span>
-      <span class="label"><strong>Tu rentres à la maison pour Noël ?</strong><small>✈️ Réserve ton aller-retour aéroport ou gare en moins de 2 minutes</small><small class="until">⏳ Seulement jusqu'au 24 décembre</small></span>
+      <span class="label"><strong>Tu rentres à la maison pour Noël ?</strong><small>✈️ Réserve ton aller-retour (aéroport, gare, Madrid…) en moins de 2 minutes</small><small class="until">⏳ Seulement jusqu'au 24 décembre</small></span>
       <span class="arrow" id="wzArrow">▾</span>
     </button>
 
@@ -421,6 +421,24 @@
           <div><span>Jour</span><input type="date" id="f-return-date" aria-label="Jour du retour"></div>
           <div><span>Heure</span><input type="time" id="f-return-time" aria-label="Heure du retour"></div>
         </div>
+      </div>
+      <div class="wz-step" data-field="diff">
+        <p class="q">Au retour, le départ ou l'arrivée changent ?</p>
+        <p class="hint">Par exemple un autre terminal ou une autre adresse d'arrivée. Si tu réponds Non, on fait le même trajet en sens inverse.</p>
+        <div class="wz-choices" id="f-diff">
+          <button type="button" data-v="yes">Oui</button>
+          <button type="button" data-v="no">Non</button>
+        </div>
+      </div>
+      <div class="wz-step" data-field="retOrigin">
+        <label for="f-ret-origin">Au retour, où vient-on te chercher ?</label>
+        <p class="hint">Ex. Aéroport Barajas T2, Gare de Chamartín, une adresse à Madrid…</p>
+        <input type="text" id="f-ret-origin" maxlength="150" autocomplete="off" enterkeyhint="next">
+      </div>
+      <div class="wz-step" data-field="retDestination">
+        <label for="f-ret-destination">Et où te dépose-t-on ?</label>
+        <p class="hint">Adresse complète. Ex. Ronda de Aulencia 49, Villanueva de la Cañada.</p>
+        <input type="text" id="f-ret-destination" maxlength="150" autocomplete="off" enterkeyhint="next">
       </div>
       <div class="wz-step" data-field="passengers">
         <p class="q">Combien de personnes ?</p>
@@ -526,10 +544,26 @@
   var backBtn = document.getElementById('wzBack');
   var nextBtn = document.getElementById('wzNext');
   var recap = document.getElementById('wzRecap');
-  var QUESTIONS = 8;            // étapes avant le récapitulatif
   var current = 0;
   var sending = false;
-  var data = { passengers: null, luggage: null };
+  var data = { passengers: null, luggage: null, diff: null };
+  var RETURN_ONLY = { retOrigin: 1, retDestination: 1 };   // posées seulement si le retour change
+
+  function fieldOf(i){ return steps[i].getAttribute('data-field'); }
+  function skipped(i){ return RETURN_ONLY[fieldOf(i)] && data.diff !== 'yes'; }
+  function indexOf(field){ for (var i = 0; i < steps.length; i++) if (fieldOf(i) === field) return i; return 0; }
+  function move(i, dir){ do { i += dir; } while (i > 0 && i < steps.length - 1 && skipped(i)); return i; }
+  // Numéro de la question affichée et total, sans compter celles qu'on saute.
+  function progress(i){
+    var pos = 0, total = 0;
+    for (var k = 0; k < steps.length; k++){
+      var f = fieldOf(k);
+      if (f === 'recap' || f === 'done' || skipped(k)) continue;
+      total++;
+      if (k <= i) pos++;
+    }
+    return { pos: pos, total: total };
+  }
 
   function $(id){ return document.getElementById(id); }
   function val(id){ return $(id).value.replace(/\s+/g, ' ').trim(); }
@@ -570,6 +604,15 @@
       if (!d || !t) return 'Choisis le jour et l\'heure du retour.';
       if (d + 'T' + t <= $('f-outbound-date').value + 'T' + $('f-outbound-time').value) return 'Le retour doit être après l\'aller.';
     },
+    diff: function(){ if (!data.diff) return 'Choisis Oui ou Non.'; },
+    retOrigin: function(){
+      var v = val('f-ret-origin');
+      if (v.length < 5 || BAD_CHARS.test(v)) return 'Écris où on vient te chercher au retour.';
+    },
+    retDestination: function(){
+      var v = val('f-ret-destination');
+      if (v.length < 5 || BAD_CHARS.test(v)) return 'Écris l\'adresse où on te dépose.';
+    },
     passengers: function(){ if (!data.passengers) return 'Choisis le nombre de personnes.'; },
     luggage: function(){ if (!data.luggage) return 'Choisis Oui ou Non.'; }
   };
@@ -587,6 +630,7 @@
       ['Personnes', String(data.passengers)],
       ['Bagage en plus', data.luggage === 'yes' ? 'Oui' : 'Non']
     ];
+    if (data.diff === 'yes') rows.splice(6, 0, ['Retour · départ', val('f-ret-origin')], ['Retour · arrivée', val('f-ret-destination')]);
     recap.textContent = '';
     rows.forEach(function(r){
       var row = document.createElement('div');
@@ -607,8 +651,9 @@
       return;
     }
     if (field === 'recap') buildRecap();
-    bar.style.width = Math.round((Math.min(i, QUESTIONS) / QUESTIONS) * 100) + '%';
-    count.textContent = field === 'recap' ? 'Dernière étape' : 'Question ' + (i + 1) + ' sur ' + QUESTIONS;
+    var pr = progress(i);
+    bar.style.width = (field === 'recap' ? 100 : Math.round(((pr.pos - 1) / pr.total) * 100)) + '%';
+    count.textContent = field === 'recap' ? 'Dernière étape' : 'Question ' + pr.pos + ' sur ' + pr.total;
     backBtn.style.visibility = i === 0 ? 'hidden' : 'visible';
     nextBtn.textContent = field === 'recap' ? 'Envoyer ma demande' : 'Continuer';
     var input = steps[i].querySelector('input');
@@ -621,7 +666,7 @@
     if (field === 'recap') return send();
     var problem = VALIDATORS[field] && VALIDATORS[field]();
     if (problem){ errorBox.textContent = problem; return; }
-    show(current + 1);
+    show(move(current, 1));
   }
 
   function send(){
@@ -635,6 +680,7 @@
       passengers: data.passengers, extra_luggage: data.luggage === 'yes',
       website: $('f-website').value
     };
+    if (data.diff === 'yes'){ payload.return_origin = val('f-ret-origin'); payload.return_destination = val('f-ret-destination'); }
     fetch(API_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), credentials: 'omit' })
       .then(function(res){
         if (res.ok) { show(steps.length - 1); return; }
@@ -658,18 +704,19 @@
   }
   choices('f-passengers', 'passengers');
   choices('f-luggage', 'luggage');
+  choices('f-diff', 'diff');
 
   // Nouvelle demande : on garde le nom et le numéro, on repart de l'adresse de départ.
   $('wzAgain').addEventListener('click', function(){
-    ['f-origin', 'f-destination', 'f-outbound-date', 'f-outbound-time', 'f-return-date', 'f-return-time'].forEach(function(id){ $(id).value = ''; });
-    data.passengers = null; data.luggage = null;
+    ['f-origin', 'f-destination', 'f-outbound-date', 'f-outbound-time', 'f-return-date', 'f-return-time', 'f-ret-origin', 'f-ret-destination'].forEach(function(id){ $(id).value = ''; });
+    data.passengers = null; data.luggage = null; data.diff = null;
     Array.prototype.forEach.call(form.querySelectorAll('.wz-choices button'), function(b){ b.classList.remove('sel'); });
     sending = false; nextBtn.disabled = false; nav.style.display = '';
-    show(2);
+    show(indexOf('origin'));
   });
 
   form.addEventListener('submit', function(e){ e.preventDefault(); next(); });
-  backBtn.addEventListener('click', function(){ if (current > 0 && !sending) show(current - 1); });
+  backBtn.addEventListener('click', function(){ if (current > 0 && !sending) show(move(current, -1)); });
   openBtn.addEventListener('click', function(){
     var open = form.classList.toggle('open');
     openBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
