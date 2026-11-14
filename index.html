@@ -8,10 +8,10 @@
 <meta name="theme-color" content="#111111">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Archivo:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* Polices hébergées ici : aucune requête vers des tiers (RGPD). */
+  @font-face{font-family:'Archivo';font-style:normal;font-weight:500 800;font-display:swap;src:url('assets/archivo-latin.woff2') format('woff2');}
+  @font-face{font-family:'Archivo Black';font-style:normal;font-weight:400;font-display:swap;src:url('assets/archivo-black-latin.woff2') format('woff2');}
   :root{
     --red:#D62828;
     --red-dark:#a81f1f;
@@ -184,23 +184,43 @@
     position:relative;
     width:100%;
     border:2px solid var(--gold);
-    background:linear-gradient(135deg,#1d4a86 0%,var(--navy) 100%);
+    background:linear-gradient(135deg,#c81d25 0%,#8f1219 55%,#5c0b10 100%);
     color:#fff;
     font-family:inherit;
     text-align:left;
     cursor:pointer;
-    padding:22px 20px 18px;
+    padding:26px 18px 18px;
     -webkit-tap-highlight-color:transparent;
+    animation:glow 2.2s ease-in-out infinite;
   }
+  @keyframes glow{
+    0%,100%{box-shadow:0 8px 20px rgba(0,0,0,.35), 0 0 0 0 rgba(245,197,24,.55);}
+    50%{box-shadow:0 8px 20px rgba(0,0,0,.35), 0 0 0 9px rgba(245,197,24,0);}
+  }
+  .btn.online .shine{position:absolute;inset:0;border-radius:14px;overflow:hidden;pointer-events:none;}
+  .btn.online .shine::before{
+    content:"";
+    position:absolute;top:0;bottom:0;left:-60%;width:45%;
+    background:linear-gradient(100deg,rgba(255,255,255,0) 0%,rgba(255,255,255,.28) 50%,rgba(255,255,255,0) 100%);
+    animation:shine 3.6s ease-in-out infinite;
+  }
+  @keyframes shine{0%,55%{left:-60%;}100%{left:130%;}}
+  .btn.online .icon{font-size:34px;}
+  .btn.online .label, .btn.online .arrow{position:relative;}
+  .btn.online .label strong{display:block;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:21px;line-height:1.15;}
+  .btn.online .label small{font-size:13.5px;line-height:1.35;margin-top:6px;}
+  .btn.online .label small.until{color:var(--gold);}
+  .btn.online .arrow{opacity:.9;font-size:16px;}
+  @media (prefers-reduced-motion:reduce){.btn.online, .btn.online .shine::before{animation:none;}}
   .badge-new{
     position:absolute;
-    top:-12px;left:16px;
-    background:var(--red);
-    color:#fff;
+    top:-13px;left:16px;
+    background:var(--gold);
+    color:var(--dark);
     font-family:'Archivo Black',sans-serif;
     font-size:12px;
     letter-spacing:.06em;
-    padding:4px 11px;
+    padding:5px 12px;
     border-radius:999px;
     box-shadow:0 3px 8px rgba(0,0,0,.4);
   }
@@ -269,6 +289,8 @@
   .wz-recap div{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #ddd6c4;}
   .wz-recap div span:first-child{color:#6b6558;flex:0 0 auto;}
   .wz-recap div span:last-child{font-weight:700;text-align:right;overflow-wrap:anywhere;}
+  .wz-legal{font-size:12px;line-height:1.45;color:#6b6558;margin:12px 0 0;}
+  .wz-legal a{color:var(--red-dark);font-weight:700;}
   .wz-done{text-align:center;padding:10px 0 4px;}
   .wz-done .big{font-size:44px;}
   .wz-done p{font-size:15.5px;line-height:1.5;font-weight:600;margin:8px 0 0;}
@@ -329,6 +351,8 @@
     line-height:1.6;
   }
 
+  footer a{color:#b9c0cc;text-decoration:underline;}
+
   /* Estado inicial (GSAP anima desde aquí); si JS falla, el fallback de abajo lo revierte */
   .garland, .logo, h1, .desc, .tag, .sub, .btn, .card{opacity:0;}
 </style>
@@ -350,14 +374,15 @@
 
   <div class="cta">
     <button type="button" class="btn online" id="wzOpen" aria-expanded="false" aria-controls="wizard">
-      <span class="badge-new">NOUVEAU !</span>
-      <span class="icon">📝</span>
-      <span class="label">Réserver en ligne · aller-retour<small>⏱ Moins de 2 minutes</small><small class="until">Disponible seulement jusqu'au 24 décembre</small></span>
+      <span class="shine" aria-hidden="true"></span>
+      <span class="badge-new">🎁 SPÉCIAL FÊTES</span>
+      <span class="icon">🎄</span>
+      <span class="label"><strong>Tu rentres à la maison pour Noël ?</strong><small>✈️ Réserve ton aller-retour aéroport ou gare en moins de 2 minutes</small><small class="until">⏳ Seulement jusqu'au 24 décembre</small></span>
       <span class="arrow" id="wzArrow">▾</span>
     </button>
 
     <form class="wizard" id="wizard" novalidate autocomplete="on">
-      <p class="wz-notice">⚠️ Uniquement pour les réservations <strong>aller-retour</strong>.<br>Ce module est disponible seulement jusqu'au <strong>24 décembre</strong>.</p>
+      <p class="wz-notice">🎄 On t'emmène et on vient te rechercher à ton retour des fêtes.<br>Uniquement pour les <strong>aller-retour</strong> · jusqu'au <strong>24 décembre</strong>.</p>
       <div class="wz-progress"><span id="wzBar"></span></div>
       <p class="wz-count" id="wzCount"></p>
 
@@ -418,6 +443,7 @@
       <div class="wz-step" data-field="recap">
         <p class="q">Tout est bon ?</p>
         <div class="wz-recap" id="wzRecap"></div>
+        <p class="wz-legal">En envoyant ta demande, Poulet utilise ces données uniquement pour gérer ta réservation et te contacter sur WhatsApp. <a href="legal.html#confidentialite" target="_blank" rel="noopener">Politique de confidentialité</a></p>
       </div>
       <div class="wz-step" data-field="done">
         <div class="wz-done">
@@ -482,7 +508,8 @@
 
 <footer>
   🐓 Poulet — Villanueva de la Cañada<br>
-  Joyeuses fêtes de la part de toute l'équipe !
+  Joyeuses fêtes de la part de toute l'équipe !<br>
+  <a href="legal.html#mentions">Mentions légales</a> · <a href="legal.html#confidentialite">Confidentialité</a> · <a href="legal.html#cookies">Cookies</a>
 </footer>
 
 <script>
@@ -652,7 +679,7 @@
 })();
 </script>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="assets/gsap.min.js"></script>
 <script>
 (function(){
   var ALL_ANIMATED = '.garland,.logo,h1,.desc,.tag,.sub,.btn,.card';
