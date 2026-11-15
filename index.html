@@ -294,6 +294,35 @@
   }
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
 
+  /* ---- Trajets à partager ---- */
+  .share{width:100%;margin-bottom:28px;}
+  .share[hidden]{display:none;}
+  .share h2{font-family:'Archivo Black',sans-serif;font-weight:400;font-size:22px;color:#fff;margin:0 0 4px;text-align:center;}
+  .share-sub{font-size:13.5px;line-height:1.45;color:#cdd3de;margin:0 0 14px;text-align:center;}
+  .share-empty{font-size:14px;color:#cdd3de;text-align:center;padding:16px;border:1px dashed rgba(245,197,24,.4);border-radius:16px;}
+  .sh-card{background:var(--cream);color:var(--dark);border-radius:18px;padding:16px 16px 14px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,.35);border-left:6px solid var(--gold);}
+  .sh-route{font-family:'Archivo Black',sans-serif;font-size:17px;line-height:1.25;margin:0 0 8px;}
+  .sh-route .to{display:block;color:var(--red-dark);}
+  .sh-meta{font-size:14px;font-weight:700;line-height:1.6;margin:0;}
+  .sh-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #ddd6c4;}
+  .sh-seats{font-size:13.5px;font-weight:800;color:#1c6b35;}
+  .sh-price{font-family:'Archivo Black',sans-serif;font-size:19px;white-space:nowrap;}
+  .sh-price small{font-family:'Archivo',sans-serif;font-size:12px;font-weight:700;color:#6b6558;}
+  .sh-btn, .sh-send{width:100%;margin-top:12px;min-height:52px;font-family:inherit;font-weight:800;font-size:16px;border:none;border-radius:14px;background:var(--red);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .sh-send:disabled{opacity:.6;}
+  .sh-form{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #ddd6c4;}
+  .sh-form.open{display:block;}
+  .sh-form label, .sh-form .q{display:block;font-size:14px;font-weight:800;margin:0 0 6px;}
+  .sh-form input[type=tel]{width:100%;font-family:inherit;font-size:17px;font-weight:600;padding:14px;min-height:52px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);outline:none;margin-bottom:12px;-webkit-appearance:none;appearance:none;}
+  .sh-form input:focus{border-color:var(--red);}
+  .sh-lug{display:flex;gap:8px;}
+  .sh-lug button{flex:1;min-height:50px;font-family:inherit;font-weight:800;font-size:14px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .sh-lug button.sel{border-color:var(--red);background:var(--red);color:#fff;}
+  .sh-error{min-height:18px;font-size:13.5px;font-weight:700;color:var(--red-dark);margin:8px 0 0;}
+  .sh-legal{font-size:12px;line-height:1.45;color:#6b6558;margin:10px 0 0;}
+  .sh-legal a{color:var(--red-dark);font-weight:700;}
+  .sh-done{font-size:15px;font-weight:700;line-height:1.5;text-align:center;margin:12px 0 2px;}
+
   /* ---- Tarifs ---- */
   .card{
     width:100%;
@@ -483,6 +512,12 @@
     </a>
     <p class="wa-tip">💡 Conseil : envoie un seul message avec ton point de départ, ta destination et la date. C'est plus rapide !</p>
   </div>
+
+  <section class="share" id="share" hidden>
+    <h2>🤝 Tu veux partager ?</h2>
+    <p class="share-sub">Des trajets déjà prévus avec des places libres. Rejoins-en un et partage les frais.</p>
+    <div id="shareList"></div>
+  </section>
 
   <div class="card">
     <h2>✈️ Aéroport &amp; 🚆 Gare</h2>
@@ -713,6 +748,121 @@
     $('wzArrow').textContent = open ? '▴' : '▾';
     if (open) show(current);
   });
+})();
+</script>
+
+<script>
+(function(){
+  var API = 'https://poulet-production.up.railway.app/api/shared-trips';
+  var section = document.getElementById('share');
+  var list = document.getElementById('shareList');
+
+  function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function frDay(iso){
+    var p = iso.split('-');
+    var d = new Date(+p[0], +p[1] - 1, +p[2]);
+    return d.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+
+  function card(t){
+    var box = el('div', 'sh-card');
+    var route = el('p', 'sh-route');
+    route.appendChild(el('span', null, t.from));
+    route.appendChild(el('span', 'to', '→ ' + t.to));
+    route.setAttribute('translate', 'no');
+    box.appendChild(route);
+    box.appendChild(el('p', 'sh-meta', '📅 ' + frDay(t.date) + ' · ' + t.time));
+    var who = el('p', 'sh-meta', t.driver ? '🚗 Trajet avec ' + t.driver : '🚗 Trajet Poulet');
+    who.setAttribute('translate', 'no');
+    box.appendChild(who);
+
+    var foot = el('div', 'sh-foot');
+    foot.appendChild(el('span', 'sh-seats', '💺 ' + t.seats + (t.seats > 1 ? ' places disponibles' : ' place disponible')));
+    if (t.price){
+      var price = el('span', 'sh-price', t.price + ' € ');
+      price.appendChild(el('small', null, '/ pers.'));
+      foot.appendChild(price);
+    }
+    box.appendChild(foot);
+
+    var open = el('button', 'sh-btn', 'Je veux partager ce trajet');
+    open.type = 'button';
+    box.appendChild(open);
+
+    var form = el('form', 'sh-form');
+    form.noValidate = true;
+    var id = 'sh-phone-' + t.ref;
+    var label = el('label', null, 'Ton numéro WhatsApp'); label.htmlFor = id;
+    var phone = el('input'); phone.type = 'tel'; phone.id = id; phone.maxLength = 20; phone.autocomplete = 'tel'; phone.inputMode = 'tel'; phone.placeholder = '+33 6 12 34 56 78';
+    form.appendChild(label); form.appendChild(phone);
+    form.appendChild(el('p', 'q', 'Tu as une valise ?'));
+    var lug = el('div', 'sh-lug'), luggage = null;
+    [['none', 'Aucune'], ['cabin', 'Cabine'], ['large', 'Grande']].forEach(function(o){
+      var b = el('button', null, o[1]); b.type = 'button';
+      b.addEventListener('click', function(){
+        luggage = o[0];
+        Array.prototype.forEach.call(lug.children, function(c){ c.classList.toggle('sel', c === b); });
+        error.textContent = '';
+      });
+      lug.appendChild(b);
+    });
+    form.appendChild(lug);
+    var hp = el('input'); hp.type = 'text'; hp.tabIndex = -1; hp.autocomplete = 'off'; hp.className = 'hp'; hp.setAttribute('aria-hidden', 'true');
+    form.appendChild(hp);
+    var error = el('p', 'sh-error'); error.setAttribute('role', 'alert');
+    form.appendChild(error);
+    var send = el('button', 'sh-send', 'Envoyer ma demande'); send.type = 'submit';
+    form.appendChild(send);
+    var legal = el('p', 'sh-legal', 'Poulet utilise ton numéro uniquement pour te répondre au sujet de ce trajet. ');
+    var link = el('a', null, 'Politique de confidentialité'); link.href = 'legal.html#confidentialite'; link.target = '_blank'; link.rel = 'noopener';
+    legal.appendChild(link);
+    form.appendChild(legal);
+    box.appendChild(form);
+
+    open.addEventListener('click', function(){
+      open.style.display = 'none';
+      form.classList.add('open');
+      setTimeout(function(){ phone.focus({ preventScroll: true }); }, 60);
+    });
+
+    var sending = false;
+    function fail(msg){ sending = false; send.disabled = false; send.textContent = 'Envoyer ma demande'; error.textContent = msg; }
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      if (sending) return;
+      var v = phone.value.replace(/\s+/g, ' ').trim();
+      var digits = v.replace(/\D/g, '');
+      if (!/^\+?[0-9][0-9 ]{6,18}$/.test(v) || digits.length < 8 || digits.length > 15){ error.textContent = 'Numéro invalide. Exemple : +33 6 12 34 56 78'; return; }
+      if (!luggage){ error.textContent = 'Dis-nous si tu as une valise.'; return; }
+      sending = true; send.disabled = true; send.textContent = 'Envoi…'; error.textContent = '';
+      fetch(API + '/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
+        body: JSON.stringify({ ref: t.ref, phone: v, luggage: luggage, website: hp.value }) })
+        .then(function(res){
+          if (res.ok){
+            form.textContent = '';
+            form.appendChild(el('p', 'sh-done', '✅ C\'est noté ! On te confirme sur WhatsApp dans les prochaines heures.'));
+            return;
+          }
+          if (res.status === 404) fail('Ce trajet n\'est plus disponible.');
+          else if (res.status === 429) fail('Trop de demandes pour le moment. Réessaie plus tard.');
+          else if (res.status === 400) fail('Vérifie ton numéro et réessaie.');
+          else fail('Une erreur est survenue. Réessaie dans un instant.');
+        })
+        .catch(function(){ fail('Pas de connexion. Vérifie ton réseau et réessaie.'); });
+    });
+    return box;
+  }
+
+  // Si le serveur ne répond pas, la section reste simplement cachée.
+  fetch(API, { credentials: 'omit' })
+    .then(function(res){ return res.ok ? res.json() : null; })
+    .then(function(data){
+      if (!data || !data.ok) return;
+      if (!data.trips.length) list.appendChild(el('p', 'share-empty', 'Aucun trajet à partager pour le moment. Reviens bientôt !'));
+      data.trips.forEach(function(t){ list.appendChild(card(t)); });
+      section.hidden = false;
+    })
+    .catch(function(){});
 })();
 </script>
 
