@@ -318,6 +318,7 @@
   .sh-price small{font-family:'Archivo',sans-serif;font-size:12px;font-weight:700;color:#6b6558;}
   .sh-btn, .sh-send{width:100%;margin-top:12px;min-height:52px;font-family:inherit;font-weight:800;font-size:16px;border:none;border-radius:14px;background:var(--red);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;}
   .sh-send:disabled{opacity:.6;}
+  .sh-btn.sh-close{background:#e3dccb;color:var(--dark);}
   .sh-form{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #ddd6c4;}
   .sh-form.open{display:block;}
   .sh-form label, .sh-form .q{display:block;font-size:14px;font-weight:800;margin:0 0 6px;}
@@ -872,16 +873,18 @@ window.pouletPhoneError = function(country){
     form.appendChild(error);
     var send = el('button', 'sh-send', 'Envoyer ma demande'); send.type = 'submit';
     form.appendChild(send);
-    var legal = el('p', 'sh-legal', 'Poulet utilise ton nom et ton numéro uniquement pour te répondre au sujet de ce trajet. ');
+    var legal = el('p', 'sh-legal', 'On te confirme sur WhatsApp dès que la personne qui a réservé ce trajet accepte. Poulet utilise ton nom et ton numéro uniquement pour ce trajet. ');
     var link = el('a', null, 'Politique de confidentialité'); link.href = 'legal.html#confidentialite'; link.target = '_blank'; link.rel = 'noopener';
     legal.appendChild(link);
     form.appendChild(legal);
     box.appendChild(form);
 
+    // Le même bouton ouvre et referme le formulaire.
     open.addEventListener('click', function(){
-      open.style.display = 'none';
-      form.classList.add('open');
-      setTimeout(function(){ name.focus({ preventScroll: true }); }, 60);
+      var isOpen = form.classList.toggle('open');
+      open.textContent = isOpen ? 'Fermer' : 'Je veux partager ce trajet';
+      open.classList.toggle('sh-close', isOpen);
+      if (isOpen) setTimeout(function(){ name.focus({ preventScroll: true }); }, 60);
     });
 
     var sending = false;
@@ -900,7 +903,8 @@ window.pouletPhoneError = function(country){
         .then(function(res){
           if (res.ok){
             form.textContent = '';
-            form.appendChild(el('p', 'sh-done', '✅ C\'est noté ! On te confirme sur WhatsApp dans les prochaines heures.'));
+            open.style.display = 'none';
+            form.appendChild(el('p', 'sh-done', '✅ C\'est noté ! On te confirme sur WhatsApp dès que la personne qui a réservé ce trajet accepte de le partager.'));
             return;
           }
           if (res.status === 404) fail('Ce trajet n\'est plus disponible.');
