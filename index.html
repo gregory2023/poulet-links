@@ -292,6 +292,14 @@
     background:#fff;color:var(--red-dark);cursor:pointer;
     -webkit-tap-highlight-color:transparent;
   }
+  .tel-row{display:flex;gap:8px;}
+  .tel-row select{
+    flex:0 0 auto;font-family:inherit;font-size:16px;font-weight:700;
+    padding:0 8px;min-height:54px;border:2px solid #cfc8b6;border-radius:14px;
+    background:#fff;color:var(--dark);outline:none;
+  }
+  .tel-row select:focus{border-color:var(--red);}
+  .tel-row input{flex:1;min-width:0;}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
 
   /* ---- Trajets à partager ---- */
@@ -313,7 +321,9 @@
   .sh-form{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #ddd6c4;}
   .sh-form.open{display:block;}
   .sh-form label, .sh-form .q{display:block;font-size:14px;font-weight:800;margin:0 0 6px;}
-  .sh-form input[type=tel]{width:100%;font-family:inherit;font-size:17px;font-weight:600;padding:14px;min-height:52px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);outline:none;margin-bottom:12px;-webkit-appearance:none;appearance:none;}
+  .sh-form .tel-row{margin-bottom:12px;}
+  .sh-form .tel-row select{min-height:52px;}
+  .sh-form input[type=tel]{width:100%;font-family:inherit;font-size:17px;font-weight:600;padding:14px;min-height:52px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);outline:none;-webkit-appearance:none;appearance:none;}
   .sh-form input:focus{border-color:var(--red);}
   .sh-lug{display:flex;gap:8px;}
   .sh-lug button{flex:1;min-height:50px;font-family:inherit;font-weight:800;font-size:14px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -412,8 +422,15 @@
       </div>
       <div class="wz-step" data-field="phone">
         <label for="f-phone">Ton numéro WhatsApp ?</label>
-        <p class="hint">Avec l'indicatif, ex. +33 6 12 34 56 78. On te confirme dessus.</p>
-        <input type="tel" id="f-phone" maxlength="20" autocomplete="tel" inputmode="tel" enterkeyhint="next">
+        <p class="hint">Choisis ton pays et écris ton numéro de portable. On te confirme dessus.</p>
+        <div class="tel-row">
+          <select id="f-phone-cc" aria-label="Indicatif du pays">
+            <option value="33">🇫🇷 +33</option>
+            <option value="34">🇪🇸 +34</option>
+            <option value="other">🌍 Autre</option>
+          </select>
+          <input type="tel" id="f-phone" maxlength="20" autocomplete="tel-national" inputmode="tel" enterkeyhint="next" placeholder="6 12 34 56 78">
+        </div>
       </div>
       <div class="wz-step" data-field="origin">
         <label for="f-origin">D'où pars-tu ?</label>
@@ -556,6 +573,39 @@
 </footer>
 
 <script>
+// Numéro au format international exigé par WhatsApp : « + », indicatif du pays,
+// numéro sans le 0 national. Renvoie null s'il n'est pas valide.
+// Mêmes règles que le serveur (web_booking.py) : les changer aux deux endroits.
+window.pouletPhone = function(country, raw){
+  var MOBILE = { '33': [9, '67'], '34': [9, '67'] };
+  var v = String(raw).replace(/[\s.\-()]/g, '');
+  if (v.indexOf('00') === 0) v = '+' + v.slice(2);
+  if (v.charAt(0) !== '+'){
+    if (!MOBILE[country]) return null;                 // « Autre » : l'indicatif doit être écrit
+    v = '+' + country + v.replace(/^0/, '');
+  }
+  if (!/^\+[1-9][0-9]{7,14}$/.test(v)) return null;
+  var digits = v.slice(1);
+  for (var cc in MOBILE){
+    if (digits.indexOf(cc) === 0){
+      var nat = digits.slice(cc.length).replace(/^0/, '');
+      if (nat.length !== MOBILE[cc][0] || MOBILE[cc][1].indexOf(nat.charAt(0)) < 0) return null;
+      return '+' + cc + nat;
+    }
+  }
+  return v;
+};
+window.pouletPhoneHint = function(country){
+  return country === '33' ? '6 12 34 56 78' : country === '34' ? '612 345 678' : '+32 470 12 34 56';
+};
+window.pouletPhoneError = function(country){
+  return country === '33' ? 'Numéro invalide. Écris ton portable français, ex. 6 12 34 56 78'
+       : country === '34' ? 'Numéro invalide. Écris ton portable espagnol, ex. 612 345 678'
+       : 'Écris ton numéro avec l\'indicatif du pays, ex. +32 470 12 34 56';
+};
+</script>
+
+<script>
 (function(){
   var API_URL = 'https://poulet-production.up.railway.app/api/web-booking';
 
@@ -593,6 +643,8 @@
   function $(id){ return document.getElementById(id); }
   function val(id){ return $(id).value.replace(/\s+/g, ' ').trim(); }
   function pad(n){ return (n < 10 ? '0' : '') + n; }
+  function phoneValue(){ return window.pouletPhone($('f-phone-cc').value, $('f-phone').value); }
+  $('f-phone-cc').addEventListener('change', function(){ $('f-phone').placeholder = window.pouletPhoneHint(this.value); errorBox.textContent = ''; });
   function isoDay(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
 
   var today = new Date();
@@ -606,9 +658,7 @@
       if (v.length < 2 || BAD_CHARS.test(v) || /[0-9]/.test(v)) return 'Écris ton prénom et ton nom.';
     },
     phone: function(){
-      var v = val('f-phone');
-      var digits = v.replace(/\D/g, '');
-      if (!/^\+?[0-9][0-9 ]{6,18}$/.test(v) || digits.length < 8 || digits.length > 15) return 'Numéro invalide. Exemple : +33 6 12 34 56 78';
+      if (!phoneValue()) return window.pouletPhoneError($('f-phone-cc').value);
     },
     origin: function(){
       var v = val('f-origin');
@@ -647,7 +697,7 @@
   function buildRecap(){
     var rows = [
       ['Nom', val('f-name')],
-      ['WhatsApp', val('f-phone')],
+      ['WhatsApp', phoneValue()],
       ['Départ', val('f-origin')],
       ['Destination', val('f-destination')],
       ['Aller', frDate($('f-outbound-date').value, $('f-outbound-time').value)],
@@ -698,7 +748,7 @@
     if (sending) return;
     sending = true; nextBtn.disabled = true; nextBtn.textContent = 'Envoi…'; errorBox.textContent = '';
     var payload = {
-      name: val('f-name'), phone: val('f-phone'),
+      name: val('f-name'), phone: phoneValue(),
       origin: val('f-origin'), destination: val('f-destination'),
       outbound_date: $('f-outbound-date').value, outbound_time: $('f-outbound-time').value,
       return_date: $('f-return-date').value, return_time: $('f-return-time').value,
@@ -779,7 +829,7 @@
     var foot = el('div', 'sh-foot');
     foot.appendChild(el('span', 'sh-seats', '💺 ' + t.seats + (t.seats > 1 ? ' places disponibles' : ' place disponible')));
     if (t.price){
-      var price = el('span', 'sh-price', t.price + ' € ');
+      var price = el('span', 'sh-price', (Number.isInteger(t.price) ? t.price : t.price.toFixed(2).replace('.', ',')) + ' € ');
       price.appendChild(el('small', null, '/ pers.'));
       foot.appendChild(price);
     }
@@ -793,8 +843,12 @@
     form.noValidate = true;
     var id = 'sh-phone-' + t.ref;
     var label = el('label', null, 'Ton numéro WhatsApp'); label.htmlFor = id;
-    var phone = el('input'); phone.type = 'tel'; phone.id = id; phone.maxLength = 20; phone.autocomplete = 'tel'; phone.inputMode = 'tel'; phone.placeholder = '+33 6 12 34 56 78';
-    form.appendChild(label); form.appendChild(phone);
+    var phone = el('input'); phone.type = 'tel'; phone.id = id; phone.maxLength = 20; phone.autocomplete = 'tel-national'; phone.inputMode = 'tel'; phone.placeholder = window.pouletPhoneHint('33');
+    var cc = el('select'); cc.setAttribute('aria-label', 'Indicatif du pays');
+    [['33', '🇫🇷 +33'], ['34', '🇪🇸 +34'], ['other', '🌍 Autre']].forEach(function(o){ var op = el('option', null, o[1]); op.value = o[0]; cc.appendChild(op); });
+    cc.addEventListener('change', function(){ phone.placeholder = window.pouletPhoneHint(cc.value); error.textContent = ''; });
+    var telRow = el('div', 'tel-row'); telRow.appendChild(cc); telRow.appendChild(phone);
+    form.appendChild(label); form.appendChild(telRow);
     form.appendChild(el('p', 'q', 'Tu as une valise ?'));
     var lug = el('div', 'sh-lug'), luggage = null;
     [['none', 'Aucune'], ['cabin', 'Cabine'], ['large', 'Grande']].forEach(function(o){
@@ -830,9 +884,8 @@
     form.addEventListener('submit', function(e){
       e.preventDefault();
       if (sending) return;
-      var v = phone.value.replace(/\s+/g, ' ').trim();
-      var digits = v.replace(/\D/g, '');
-      if (!/^\+?[0-9][0-9 ]{6,18}$/.test(v) || digits.length < 8 || digits.length > 15){ error.textContent = 'Numéro invalide. Exemple : +33 6 12 34 56 78'; return; }
+      var v = window.pouletPhone(cc.value, phone.value);
+      if (!v){ error.textContent = window.pouletPhoneError(cc.value); return; }
       if (!luggage){ error.textContent = 'Dis-nous si tu as une valise.'; return; }
       sending = true; send.disabled = true; send.textContent = 'Envoi…'; error.textContent = '';
       fetch(API + '/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
@@ -845,7 +898,7 @@
           }
           if (res.status === 404) fail('Ce trajet n\'est plus disponible.');
           else if (res.status === 429) fail('Trop de demandes pour le moment. Réessaie plus tard.');
-          else if (res.status === 400) fail('Vérifie ton numéro et réessaie.');
+          else if (res.status === 400) fail(window.pouletPhoneError(cc.value));
           else fail('Une erreur est survenue. Réessaie dans un instant.');
         })
         .catch(function(){ fail('Pas de connexion. Vérifie ton réseau et réessaie.'); });
