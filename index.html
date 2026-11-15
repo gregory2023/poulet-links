@@ -323,7 +323,8 @@
   .sh-form label, .sh-form .q{display:block;font-size:14px;font-weight:800;margin:0 0 6px;}
   .sh-form .tel-row{margin-bottom:12px;}
   .sh-form .tel-row select{min-height:52px;}
-  .sh-form input[type=tel]{width:100%;font-family:inherit;font-size:17px;font-weight:600;padding:14px;min-height:52px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);outline:none;-webkit-appearance:none;appearance:none;}
+  .sh-form input[type=text]{margin-bottom:12px;}
+  .sh-form input[type=text], .sh-form input[type=tel]{width:100%;font-family:inherit;font-size:17px;font-weight:600;padding:14px;min-height:52px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);outline:none;-webkit-appearance:none;appearance:none;}
   .sh-form input:focus{border-color:var(--red);}
   .sh-lug{display:flex;gap:8px;}
   .sh-lug button{flex:1;min-height:50px;font-family:inherit;font-weight:800;font-size:14px;border:2px solid #cfc8b6;border-radius:14px;background:#fff;color:var(--dark);cursor:pointer;-webkit-tap-highlight-color:transparent;}
@@ -841,6 +842,10 @@ window.pouletPhoneError = function(country){
 
     var form = el('form', 'sh-form');
     form.noValidate = true;
+    var nameId = 'sh-name-' + t.ref;
+    var nameLabel = el('label', null, 'Ton prénom et ton nom'); nameLabel.htmlFor = nameId;
+    var name = el('input'); name.type = 'text'; name.id = nameId; name.maxLength = 60; name.autocomplete = 'name'; name.setAttribute('autocapitalize', 'words');
+    form.appendChild(nameLabel); form.appendChild(name);
     var id = 'sh-phone-' + t.ref;
     var label = el('label', null, 'Ton numéro WhatsApp'); label.htmlFor = id;
     var phone = el('input'); phone.type = 'tel'; phone.id = id; phone.maxLength = 20; phone.autocomplete = 'tel-national'; phone.inputMode = 'tel'; phone.placeholder = window.pouletPhoneHint('33');
@@ -867,7 +872,7 @@ window.pouletPhoneError = function(country){
     form.appendChild(error);
     var send = el('button', 'sh-send', 'Envoyer ma demande'); send.type = 'submit';
     form.appendChild(send);
-    var legal = el('p', 'sh-legal', 'Poulet utilise ton numéro uniquement pour te répondre au sujet de ce trajet. ');
+    var legal = el('p', 'sh-legal', 'Poulet utilise ton nom et ton numéro uniquement pour te répondre au sujet de ce trajet. ');
     var link = el('a', null, 'Politique de confidentialité'); link.href = 'legal.html#confidentialite'; link.target = '_blank'; link.rel = 'noopener';
     legal.appendChild(link);
     form.appendChild(legal);
@@ -876,7 +881,7 @@ window.pouletPhoneError = function(country){
     open.addEventListener('click', function(){
       open.style.display = 'none';
       form.classList.add('open');
-      setTimeout(function(){ phone.focus({ preventScroll: true }); }, 60);
+      setTimeout(function(){ name.focus({ preventScroll: true }); }, 60);
     });
 
     var sending = false;
@@ -884,12 +889,14 @@ window.pouletPhoneError = function(country){
     form.addEventListener('submit', function(e){
       e.preventDefault();
       if (sending) return;
+      var n = name.value.replace(/\s+/g, ' ').trim();
+      if (n.length < 2 || /[<>{}\\0-9]/.test(n)){ error.textContent = 'Écris ton prénom et ton nom.'; return; }
       var v = window.pouletPhone(cc.value, phone.value);
       if (!v){ error.textContent = window.pouletPhoneError(cc.value); return; }
       if (!luggage){ error.textContent = 'Dis-nous si tu as une valise.'; return; }
       sending = true; send.disabled = true; send.textContent = 'Envoi…'; error.textContent = '';
       fetch(API + '/join', { method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'omit',
-        body: JSON.stringify({ ref: t.ref, phone: v, luggage: luggage, website: hp.value }) })
+        body: JSON.stringify({ ref: t.ref, name: n, phone: v, luggage: luggage, website: hp.value }) })
         .then(function(res){
           if (res.ok){
             form.textContent = '';
@@ -898,7 +905,7 @@ window.pouletPhoneError = function(country){
           }
           if (res.status === 404) fail('Ce trajet n\'est plus disponible.');
           else if (res.status === 429) fail('Trop de demandes pour le moment. Réessaie plus tard.');
-          else if (res.status === 400) fail(window.pouletPhoneError(cc.value));
+          else if (res.status === 400) fail('Vérifie ton nom et ton numéro, puis réessaie.');
           else fail('Une erreur est survenue. Réessaie dans un instant.');
         })
         .catch(function(){ fail('Pas de connexion. Vérifie ton réseau et réessaie.'); });
