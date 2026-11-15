@@ -855,7 +855,7 @@ window.pouletPhoneError = function(country){
         stats.appendChild(stars);
         stats.appendChild(document.createTextNode(' ' + String(t.rating).replace('.', ',') + ' (' + t.ratings + ' avis)'));
       }
-      if (t.trips_done) stats.appendChild(document.createTextNode((t.rating ? ' · ' : '') + t.trips_done + (t.trips_done > 1 ? ' trajets réalisés' : ' trajet réalisé')));
+      if (t.many_trips) stats.appendChild(document.createTextNode((t.rating ? ' · ' : '') + '+10 trajets réalisés'));
       if (stats.childNodes.length) more.appendChild(stats);
     }
     more.appendChild(el('p', 'sh-seats', '💺 ' + t.seats + (t.seats > 1 ? ' places disponibles' : ' place disponible')));
