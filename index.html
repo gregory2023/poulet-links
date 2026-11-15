@@ -312,15 +312,19 @@
   .sh-route{font-family:'Archivo Black',sans-serif;font-size:17px;line-height:1.25;margin:0 0 8px;}
   .sh-route .to{display:block;color:var(--red-dark);}
   .sh-meta{font-size:14px;font-weight:700;line-height:1.6;margin:0;}
-  .sh-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid #ddd6c4;}
-  .sh-seats{font-size:13.5px;font-weight:800;color:#1c6b35;}
+  .sh-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .sh-seats{font-size:14px;font-weight:800;color:#1c6b35;margin:0;}
   .sh-price{font-family:'Archivo Black',sans-serif;font-size:19px;white-space:nowrap;}
   .sh-price small{font-family:'Archivo',sans-serif;font-size:12px;font-weight:700;color:#6b6558;}
   .sh-btn, .sh-send{width:100%;margin-top:12px;min-height:52px;font-family:inherit;font-weight:800;font-size:16px;border:none;border-radius:14px;background:var(--red);color:#fff;cursor:pointer;-webkit-tap-highlight-color:transparent;}
   .sh-send:disabled{opacity:.6;}
   .sh-btn.sh-close{background:#e3dccb;color:var(--dark);}
-  .sh-form{display:none;margin-top:12px;padding-top:12px;border-top:1px solid #ddd6c4;}
-  .sh-form.open{display:block;}
+  .sh-more{display:none;margin-top:14px;padding-top:12px;border-top:1px solid #ddd6c4;}
+  .sh-more.open{display:block;}
+  .sh-who{font-family:'Archivo Black',sans-serif;font-size:17px;margin:0 0 2px;}
+  .sh-stats{font-size:14px;font-weight:700;color:#4a4638;margin:0 0 8px;}
+  .sh-stars{color:#e0a800;font-size:17px;letter-spacing:1px;}
+  .sh-form{margin-top:14px;}
   .sh-form label, .sh-form .q{display:block;font-size:14px;font-weight:800;margin:0 0 6px;}
   .sh-form .tel-row{margin-bottom:12px;}
   .sh-form .tel-row select{min-height:52px;}
@@ -823,23 +827,39 @@ window.pouletPhoneError = function(country){
     route.appendChild(el('span', 'to', '→ ' + t.to));
     route.setAttribute('translate', 'no');
     box.appendChild(route);
-    box.appendChild(el('p', 'sh-meta', '📅 ' + frDay(t.date) + ' · ' + t.time));
-    var who = el('p', 'sh-meta', t.driver ? '🚗 Trajet avec ' + t.driver : '🚗 Trajet Poulet');
-    who.setAttribute('translate', 'no');
-    box.appendChild(who);
-
-    var foot = el('div', 'sh-foot');
-    foot.appendChild(el('span', 'sh-seats', '💺 ' + t.seats + (t.seats > 1 ? ' places disponibles' : ' place disponible')));
+    // Fermée, la carte montre seulement le trajet, la date et le prix.
+    var head = el('div', 'sh-foot');
+    head.appendChild(el('span', 'sh-meta', '📅 ' + frDay(t.date) + ' · ' + t.time));
     if (t.price){
       var price = el('span', 'sh-price', (Number.isInteger(t.price) ? t.price : t.price.toFixed(2).replace('.', ',')) + ' € ');
       price.appendChild(el('small', null, '/ pers.'));
-      foot.appendChild(price);
+      head.appendChild(price);
     }
-    box.appendChild(foot);
+    box.appendChild(head);
 
-    var open = el('button', 'sh-btn', 'Je veux partager ce trajet');
+    var open = el('button', 'sh-btn', 'Voir le trajet');
     open.type = 'button';
     box.appendChild(open);
+
+    // Dépliée : avec qui, sa note réelle, ses trajets réalisés, les places.
+    var more = el('div', 'sh-more');
+    var who = el('p', 'sh-who', t.driver ? 'Trajet avec ' + t.driver : 'Trajet Poulet');
+    who.setAttribute('translate', 'no');
+    more.appendChild(who);
+    if (t.driver){
+      var stats = el('p', 'sh-stats');
+      if (t.rating){
+        var full = Math.round(t.rating);
+        var stars = el('span', 'sh-stars', '★★★★★'.slice(0, full) + '☆☆☆☆☆'.slice(0, 5 - full));
+        stars.setAttribute('aria-label', 'Note ' + String(t.rating).replace('.', ',') + ' sur 5');
+        stats.appendChild(stars);
+        stats.appendChild(document.createTextNode(' ' + String(t.rating).replace('.', ',') + ' (' + t.ratings + ' avis)'));
+      }
+      if (t.trips_done) stats.appendChild(document.createTextNode((t.rating ? ' · ' : '') + t.trips_done + (t.trips_done > 1 ? ' trajets réalisés' : ' trajet réalisé')));
+      if (stats.childNodes.length) more.appendChild(stats);
+    }
+    more.appendChild(el('p', 'sh-seats', '💺 ' + t.seats + (t.seats > 1 ? ' places disponibles' : ' place disponible')));
+    box.appendChild(more);
 
     var form = el('form', 'sh-form');
     form.noValidate = true;
@@ -877,12 +897,12 @@ window.pouletPhoneError = function(country){
     var link = el('a', null, 'Politique de confidentialité'); link.href = 'legal.html#confidentialite'; link.target = '_blank'; link.rel = 'noopener';
     legal.appendChild(link);
     form.appendChild(legal);
-    box.appendChild(form);
+    more.appendChild(form);
 
     // Le même bouton ouvre et referme le formulaire.
     open.addEventListener('click', function(){
-      var isOpen = form.classList.toggle('open');
-      open.textContent = isOpen ? 'Fermer' : 'Je veux partager ce trajet';
+      var isOpen = more.classList.toggle('open');
+      open.textContent = isOpen ? 'Fermer' : 'Voir le trajet';
       open.classList.toggle('sh-close', isOpen);
       if (isOpen) setTimeout(function(){ name.focus({ preventScroll: true }); }, 60);
     });
@@ -903,7 +923,6 @@ window.pouletPhoneError = function(country){
         .then(function(res){
           if (res.ok){
             form.textContent = '';
-            open.style.display = 'none';
             form.appendChild(el('p', 'sh-done', '✅ C\'est noté ! On te confirme sur WhatsApp dès que la personne qui a réservé ce trajet accepte de le partager.'));
             return;
           }
