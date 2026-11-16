@@ -305,7 +305,15 @@
   /* ---- Trajets à partager ---- */
   .share{width:100%;margin-bottom:28px;}
   .share[hidden]{display:none;}
-  .share h2{font-family:'Archivo Black',sans-serif;font-weight:400;font-size:22px;color:#fff;margin:0 0 4px;text-align:center;}
+  .share-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:14px 18px;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:19px;text-align:left;color:#fff;background:rgba(244,240,230,.06);border:1px solid rgba(245,197,24,.45);border-radius:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .share-toggle small{display:block;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;color:var(--gold);margin-top:2px;}
+  .share-toggle .chev{flex:none;font-size:16px;color:var(--gold);transition:transform .2s;}
+  .share-toggle[aria-expanded=true] .chev{transform:rotate(180deg);}
+  .share-body{display:none;margin-top:14px;}
+  .share-body.open{display:block;}
+  .sh-riders{display:flex;align-items:center;margin:10px 0 0;}
+  .sh-rider{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;letter-spacing:.3px;color:#fff;border:2px solid var(--cream);margin-left:-8px;}
+  .sh-rider:first-child{margin-left:0;}
   .share-sub{font-size:13.5px;line-height:1.45;color:#cdd3de;margin:0 0 14px;text-align:center;}
   .share-empty{font-size:14px;color:#cdd3de;text-align:center;padding:16px;border:1px dashed rgba(245,197,24,.4);border-radius:16px;}
   .sh-card{background:var(--cream);color:var(--dark);border-radius:18px;padding:16px 16px 14px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,.35);border-left:6px solid var(--gold);}
@@ -537,9 +545,14 @@
   </div>
 
   <section class="share" id="share" hidden>
-    <h2>🤝 Tu veux partager ?</h2>
-    <p class="share-sub">Des trajets déjà prévus avec des places libres. Rejoins-en un et partage les frais.</p>
-    <div id="shareList"></div>
+    <button type="button" class="share-toggle" id="shareToggle" aria-expanded="false" aria-controls="shareBody">
+      <span>🤝 Tu veux partager ?<small id="shareCount"></small></span>
+      <span class="chev" aria-hidden="true">▼</span>
+    </button>
+    <div class="share-body" id="shareBody">
+      <p class="share-sub">Des trajets déjà prévus avec des places libres. Rejoins-en un et partage les frais.</p>
+      <div id="shareList"></div>
+    </div>
   </section>
 
   <div class="card">
@@ -812,6 +825,25 @@ window.pouletPhoneError = function(country){
   var API = 'https://poulet-production.up.railway.app/api/shared-trips';
   var section = document.getElementById('share');
   var list = document.getElementById('shareList');
+  var toggle = document.getElementById('shareToggle');
+  var body = document.getElementById('shareBody');
+  // Fermé par défaut : les trajets ne s'affichent que si on le demande.
+  toggle.addEventListener('click', function(){
+    toggle.setAttribute('aria-expanded', String(body.classList.toggle('open')));
+  });
+  // Pastilles façon WhatsApp sans photo : initiales sur une couleur stable.
+  var COLORS = ['#c0392b', '#d35400', '#b7791f', '#1e8449', '#117a65', '#1f618d', '#6c3483', '#ad1457'];
+  function riders(names){
+    var row = el('div', 'sh-riders');
+    row.setAttribute('aria-label', names.length + (names.length > 1 ? ' personnes inscrites' : ' personne inscrite'));
+    names.forEach(function(n, i){
+      var b = el('span', 'sh-rider', n);
+      b.style.background = COLORS[(n.charCodeAt(0) * 7 + (n.charCodeAt(1) || 0) * 3 + i) % COLORS.length];
+      b.setAttribute('translate', 'no');
+      row.appendChild(b);
+    });
+    return row;
+  }
 
   function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function frDay(iso){
@@ -836,6 +868,7 @@ window.pouletPhoneError = function(country){
       head.appendChild(price);
     }
     box.appendChild(head);
+    if (t.riders && t.riders.length) box.appendChild(riders(t.riders));
 
     var open = el('button', 'sh-btn', 'Voir le trajet');
     open.type = 'button';
@@ -943,6 +976,8 @@ window.pouletPhoneError = function(country){
       if (!data || !data.ok) return;
       if (!data.trips.length) list.appendChild(el('p', 'share-empty', 'Aucun trajet à partager pour le moment. Reviens bientôt !'));
       data.trips.forEach(function(t){ list.appendChild(card(t)); });
+      var n = data.trips.length;
+      document.getElementById('shareCount').textContent = n ? n + (n > 1 ? ' trajets disponibles' : ' trajet disponible') : 'Aucun trajet pour le moment';
       section.hidden = false;
     })
     .catch(function(){});
