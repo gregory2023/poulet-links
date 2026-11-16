@@ -305,9 +305,13 @@
   /* ---- Trajets à partager ---- */
   .share{width:100%;margin-bottom:28px;}
   .share[hidden]{display:none;}
-  .share-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;padding:14px 18px;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:19px;text-align:left;color:#fff;background:rgba(244,240,230,.06);border:1px solid rgba(245,197,24,.45);border-radius:18px;cursor:pointer;-webkit-tap-highlight-color:transparent;}
-  .share-toggle small{display:block;font-family:'Archivo',sans-serif;font-size:13px;font-weight:700;color:var(--gold);margin-top:2px;}
-  .share-toggle .chev{flex:none;font-size:16px;color:var(--gold);transition:transform .2s;}
+  .share-toggle{position:relative;width:100%;display:flex;flex-direction:column;justify-content:flex-end;min-height:270px;padding:0;overflow:hidden;font-family:inherit;text-align:left;color:var(--dark);background:var(--gold) url('compartir-bg.jpg') center 30%/cover no-repeat;border:3px solid var(--gold);border-radius:18px;box-shadow:0 8px 20px rgba(0,0,0,.35);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+  .share-toggle::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom, rgba(245,197,24,0) 48%, rgba(245,197,24,.75) 74%, rgba(245,197,24,.98) 100%);}
+  .share-toggle:hover{filter:brightness(1.05);}
+  .share-toggle .row{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 18px;}
+  .share-toggle strong{display:block;font-family:'Archivo Black',sans-serif;font-weight:400;font-size:21px;line-height:1.15;}
+  .share-toggle small{display:block;font-size:14px;font-weight:800;color:var(--red-dark);margin-top:4px;}
+  .share-toggle .chev{flex:none;font-size:18px;transition:transform .2s;}
   .share-toggle[aria-expanded=true] .chev{transform:rotate(180deg);}
   .share-body{display:none;margin-top:14px;}
   .share-body.open{display:block;}
@@ -546,8 +550,10 @@
 
   <section class="share" id="share" hidden>
     <button type="button" class="share-toggle" id="shareToggle" aria-expanded="false" aria-controls="shareBody">
-      <span>🤝 Tu veux partager ?<small id="shareCount"></small></span>
-      <span class="chev" aria-hidden="true">▼</span>
+      <span class="row">
+        <span><strong>🤝 Tu veux partager ?</strong><small id="shareCount"></small></span>
+        <span class="chev" aria-hidden="true">▼</span>
+      </span>
     </button>
     <div class="share-body" id="shareBody">
       <p class="share-sub">Des trajets déjà prévus avec des places libres. Rejoins-en un et partage les frais.</p>
