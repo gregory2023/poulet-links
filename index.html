@@ -513,6 +513,14 @@
           <button type="button" data-v="no">Non</button>
         </div>
       </div>
+      <div class="wz-step" data-field="share">
+        <p class="q">Tu veux partager le trajet avec d'autres étudiants pour payer moins ?</p>
+        <p class="hint">On publie tes trajets sur poulet.es sans ton adresse ni ton numéro, seulement tes initiales.</p>
+        <div class="wz-choices" id="f-share">
+          <button type="button" data-v="yes">Oui</button>
+          <button type="button" data-v="no">Non</button>
+        </div>
+      </div>
       <div class="wz-step" data-field="recap">
         <p class="q">Tout est bon ?</p>
         <div class="wz-recap" id="wzRecap"></div>
@@ -564,29 +572,29 @@
 
   <div class="card">
     <h2>✈️ Aéroport &amp; 🚆 Gare</h2>
-    <div class="rate"><span class="what">1 passager</span><span class="price">34 €</span></div>
-    <div class="rate"><span class="what">2 passagers</span><span class="price">42 €<span class="per">soit 21 € par Poulet</span></span></div>
-    <div class="rate"><span class="what">3 passagers</span><span class="price">55 €<span class="per">soit 18,33 € par Poulet</span></span></div>
-    <div class="rate"><span class="what">4 passagers</span><span class="price">55 €<span class="per">soit 13,75 € par Poulet</span></span></div>
+    <div class="rate"><span class="what">1 Poulet</span><span class="price">34 €</span></div>
+    <div class="rate"><span class="what">2 Poulets</span><span class="price">42 €<span class="per">soit 21 € par Poulet</span></span></div>
+    <div class="rate"><span class="what">3 Poulets</span><span class="price">55 €<span class="per">soit 18,33 € par Poulet</span></span></div>
+    <div class="rate"><span class="what">4 Poulets</span><span class="price">55 €<span class="per">soit 13,75 € par Poulet</span></span></div>
     <p class="note">
-      <strong>Heure de pointe</strong> (lun-ven, 8h00-10h59), 1 passager : 35 €.<br>
+      <strong>Heure de pointe</strong> (lun-ven, 8h00-10h59), 1 Poulet : 35 €.<br>
       <strong>Nuit</strong> (tous les jours, 22h59-6h00) : +2 €, plafonné à 55 €.
     </p>
   </div>
 
   <div class="card">
     <h2>🏙️ Madrid &amp; bars</h2>
-    <div class="rate"><span class="what">1 à 3 passagers</span><span class="price">35 €</span></div>
-    <div class="rate"><span class="what">4 passagers</span><span class="price">45 €</span></div>
-    <div class="rate"><span class="what">Après minuit (1 à 3 pax)</span><span class="price">40 €</span></div>
+    <div class="rate"><span class="what">1 à 3 Poulets</span><span class="price">35 €</span></div>
+    <div class="rate"><span class="what">4 Poulets</span><span class="price">45 €</span></div>
+    <div class="rate"><span class="what">Après minuit (1 à 3 Poulets)</span><span class="price">40 €</span></div>
     <p class="note">Prix total pour le groupe, pas par personne. Aller ou retour des bars au même tarif.</p>
   </div>
 
   <div class="card">
     <h2>🤝 Trajets partagés suggérés par Poulet</h2>
-    <div class="rate"><span class="what">2 personnes</span><span class="price">25 € / pers.</span></div>
-    <div class="rate"><span class="what">3 personnes</span><span class="price">20 € / pers.</span></div>
-    <div class="rate"><span class="what">4 personnes</span><span class="price">15 € / pers.</span></div>
+    <div class="rate"><span class="what">2 Poulets</span><span class="price">25 € / Poulet</span></div>
+    <div class="rate"><span class="what">3 Poulets</span><span class="price">20 € / Poulet</span></div>
+    <div class="rate"><span class="what">4 Poulets</span><span class="price">15 € / Poulet</span></div>
     <p class="note">Prix par personne quand Poulet te propose de partager le trajet avec d'autres voyageurs.</p>
   </div>
 
@@ -647,7 +655,7 @@ window.pouletPhoneError = function(country){
   var recap = document.getElementById('wzRecap');
   var current = 0;
   var sending = false;
-  var data = { passengers: null, luggage: null, diff: null };
+  var data = { passengers: null, luggage: null, diff: null, share: null };
   var RETURN_ONLY = { retOrigin: 1, retDestination: 1 };   // posées seulement si le retour change
 
   function fieldOf(i){ return steps[i].getAttribute('data-field'); }
@@ -715,7 +723,8 @@ window.pouletPhoneError = function(country){
       if (v.length < 5 || BAD_CHARS.test(v)) return 'Écris l\'adresse où on te dépose.';
     },
     passengers: function(){ if (!data.passengers) return 'Choisis le nombre de personnes.'; },
-    luggage: function(){ if (!data.luggage) return 'Choisis Oui ou Non.'; }
+    luggage: function(){ if (!data.luggage) return 'Choisis Oui ou Non.'; },
+    share: function(){ if (!data.share) return 'Choisis Oui ou Non.'; }
   };
 
   function frDate(d, t){ var p = d.split('-'); return p[2] + '/' + p[1] + '/' + p[0] + ' à ' + t; }
@@ -729,7 +738,8 @@ window.pouletPhoneError = function(country){
       ['Aller', frDate($('f-outbound-date').value, $('f-outbound-time').value)],
       ['Retour', frDate($('f-return-date').value, $('f-return-time').value)],
       ['Personnes', String(data.passengers)],
-      ['Bagage en plus', data.luggage === 'yes' ? 'Oui' : 'Non']
+      ['Bagage en plus', data.luggage === 'yes' ? 'Oui' : 'Non'],
+      ['Trajet partagé', data.share === 'yes' ? 'Oui' : 'Non']
     ];
     if (data.diff === 'yes') rows.splice(6, 0, ['Retour · départ', val('f-ret-origin')], ['Retour · arrivée', val('f-ret-destination')]);
     recap.textContent = '';
@@ -779,6 +789,7 @@ window.pouletPhoneError = function(country){
       outbound_date: $('f-outbound-date').value, outbound_time: $('f-outbound-time').value,
       return_date: $('f-return-date').value, return_time: $('f-return-time').value,
       passengers: data.passengers, extra_luggage: data.luggage === 'yes',
+      wants_shared: data.share === 'yes',
       website: $('f-website').value
     };
     if (data.diff === 'yes'){ payload.return_origin = val('f-ret-origin'); payload.return_destination = val('f-ret-destination'); }
@@ -806,11 +817,12 @@ window.pouletPhoneError = function(country){
   choices('f-passengers', 'passengers');
   choices('f-luggage', 'luggage');
   choices('f-diff', 'diff');
+  choices('f-share', 'share');
 
   // Nouvelle demande : on garde le nom et le numéro, on repart de l'adresse de départ.
   $('wzAgain').addEventListener('click', function(){
     ['f-origin', 'f-destination', 'f-outbound-date', 'f-outbound-time', 'f-return-date', 'f-return-time', 'f-ret-origin', 'f-ret-destination'].forEach(function(id){ $(id).value = ''; });
-    data.passengers = null; data.luggage = null; data.diff = null;
+    data.passengers = null; data.luggage = null; data.diff = null; data.share = null;
     Array.prototype.forEach.call(form.querySelectorAll('.wz-choices button'), function(b){ b.classList.remove('sel'); });
     sending = false; nextBtn.disabled = false; nav.style.display = '';
     show(indexOf('origin'));
